@@ -135,12 +135,32 @@ struct mn_mreq {
     } mm_addr;
 };
 
+/*
+ * Structure for IPv4 multicast membership add/drop
+ */
+struct mn_m4req {
+    struct mn_in_addr mm_multiaddr;
+    struct mn_in_addr mm_interface;
+};
+
+/*
+ * Structure for IPv4 multicast interface setting
+ */
+struct mn_m4if {
+    struct mn_in_addr mm_inaddr;
+};
+
 #define MN_SO_LEVEL                     0xfe
 
 #define MN_MCAST_JOIN_GROUP             1
 #define MN_MCAST_LEAVE_GROUP            2
 #define MN_MCAST_IF                     3
 #define MN_REUSEADDR                    4
+#define MN_MCAST4_ADD_MEMBERSHIP        5
+#define MN_MCAST4_DROP_MEMBERSHIP       6
+#define MN_MCAST4_IF                    7
+#define MN_MCAST4_LOOP                  8
+#define MN_MCAST4_TTL                   9
 
 /*
  * Socket calls.

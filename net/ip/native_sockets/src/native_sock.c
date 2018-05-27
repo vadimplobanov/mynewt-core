@@ -614,10 +614,15 @@ native_sock_setsockopt(struct mn_socket *s, uint8_t level, uint8_t name,
     struct native_sock *ns = (struct native_sock *)s;
     int rc;
     uint32_t val32;
+    uint8_t val8;
     struct group_req greq;
+    struct ip_mreq ireq;
+    struct in_addr inaddr;
     struct sockaddr_in *sin;
     struct sockaddr_in6 *sin6;
     struct mn_mreq *mreq;
+    struct mn_m4req *m4req;
+    struct mn_m4if *m4if;
 
     if (level == MN_SO_LEVEL) {
         switch (name) {
@@ -655,6 +660,7 @@ native_sock_setsockopt(struct mn_socket *s, uint8_t level, uint8_t name,
                 return native_sock_err_to_mn_err(errno);
             }
             return 0;
+
         case MN_MCAST_IF:
             if (ns->ns_pf == AF_INET) {
                 level = IPPROTO_IP;
@@ -678,6 +684,71 @@ native_sock_setsockopt(struct mn_socket *s, uint8_t level, uint8_t name,
             name = SO_REUSEADDR;
             val32 = *(uint32_t *)val;
             rc = setsockopt(ns->ns_fd, level, name, &val32, sizeof(val32));
+            if (rc) {
+                return native_sock_err_to_mn_err(errno);
+            }
+            return 0;
+
+        case MN_MCAST4_ADD_MEMBERSHIP:
+            if (ns->ns_pf != AF_INET) {
+                break;
+            }
+            m4req = val;
+            ireq.imr_multiaddr.s_addr = m4req->mm_multiaddr.s_addr;
+            ireq.imr_interface.s_addr = m4req->mm_interface.s_addr;
+            rc = setsockopt(ns->ns_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                            &ireq, sizeof(ireq));
+            if (rc) {
+                return native_sock_err_to_mn_err(errno);
+            }
+            return 0;
+
+        case MN_MCAST4_DROP_MEMBERSHIP:
+            if (ns->ns_pf != AF_INET) {
+                break;
+            }
+            m4req = val;
+            ireq.imr_multiaddr.s_addr = m4req->mm_multiaddr.s_addr;
+            ireq.imr_interface.s_addr = m4req->mm_interface.s_addr;
+            rc = setsockopt(ns->ns_fd, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                            &ireq, sizeof(ireq));
+            if (rc) {
+                return native_sock_err_to_mn_err(errno);
+            }
+            return 0;
+
+        case MN_MCAST4_IF:
+            if (ns->ns_pf != AF_INET) {
+                break;
+            }
+            m4if = val;
+            inaddr.s_addr = m4if->mm_inaddr.s_addr;
+            rc = setsockopt(ns->ns_fd, IPPROTO_IP, IP_MULTICAST_IF,
+                            &inaddr, sizeof(inaddr));
+            if (rc) {
+                return native_sock_err_to_mn_err(errno);
+            }
+            return 0;
+
+        case MN_MCAST4_LOOP:
+            if (ns->ns_pf != AF_INET) {
+                break;
+            }
+            val8 = *(uint8_t *)val;
+            rc = setsockopt(ns->ns_fd, IPPROTO_IP, IP_MULTICAST_LOOP,
+                            &val8, sizeof(val8));
+            if (rc) {
+                return native_sock_err_to_mn_err(errno);
+            }
+            return 0;
+
+        case MN_MCAST4_TTL:
+            if (ns->ns_pf != AF_INET) {
+                break;
+            }
+            val8 = *(uint8_t *)val;
+            rc = setsockopt(ns->ns_fd, IPPROTO_IP, IP_MULTICAST_TTL,
+                            &val8, sizeof(val8));
             if (rc) {
                 return native_sock_err_to_mn_err(errno);
             }
