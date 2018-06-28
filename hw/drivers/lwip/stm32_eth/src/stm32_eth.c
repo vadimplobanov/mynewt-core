@@ -138,7 +138,7 @@ static struct pbuf *
 stm32_eth_input(struct stm32_eth_state *ses)
 {
     struct stm32_eth_desc *sed;
-    struct pbuf *p;
+    struct pbuf *p = NULL;
     struct netif *nif;
 
     nif = &ses->st_nif;
