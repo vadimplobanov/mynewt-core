@@ -21,7 +21,7 @@
 syscfg.defs:
     SHELL_TASK:
         description: 'Controls whether shell is enabled or not.'
-        value: 0
+        value: 1
 
     SHELL_CMD_ARGC_MAX:
         description: 'Max number of command line arguments'
