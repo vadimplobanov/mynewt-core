@@ -20,4 +20,4 @@
 syscfg.defs:
     LOG_SOFT_RESET:
         description: 'Log soft restarts'
-        value: 1
+        value: 0
