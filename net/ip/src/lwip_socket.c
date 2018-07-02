@@ -29,6 +29,7 @@
 #include <lwip/tcp.h>
 #include <lwip/igmp.h>
 #include <lwip/mld6.h>
+#include <lwip/inet.h>
 #include "ip_priv.h"
 
 static int lwip_sock_create(struct mn_socket **sp, uint8_t domain,
@@ -625,8 +626,14 @@ lwip_nif_from_idx(int idx)
 static int
 lwip_setsockopt(struct mn_socket *ms, uint8_t level, uint8_t name, void *val)
 {
+    struct lwip_sock *lwip_sock = (struct lwip_sock *)ms;
     struct netif *nif;
     struct mn_mreq *mreq;
+    struct mn_m4req *m4req;
+    struct mn_m4if *m4if;
+    ip4_addr_t iface_addr;
+    ip4_addr_t multi_addr;
+    uint8_t optval8;
     int rc = MN_EPROTONOSUPPORT;
 
     if (level == MN_SO_LEVEL) {
@@ -660,7 +667,58 @@ lwip_setsockopt(struct mn_socket *ms, uint8_t level, uint8_t name, void *val)
             }
             UNLOCK_TCPIP_CORE();
             return lwip_err_to_mn_err(rc);
+
         case MN_MCAST_IF:
+            break;
+
+        case MN_MCAST4_ADD_MEMBERSHIP:
+            m4req = val;
+            LOCK_TCPIP_CORE();
+            inet_addr_to_ip4addr(&iface_addr, &m4req->mm_interface);
+            inet_addr_to_ip4addr(&multi_addr, &m4req->mm_multiaddr);
+            rc = igmp_joingroup(&iface_addr, &multi_addr);
+            UNLOCK_TCPIP_CORE();
+            return lwip_err_to_mn_err(rc);
+
+        case MN_MCAST4_DROP_MEMBERSHIP:
+            m4req = val;
+            LOCK_TCPIP_CORE();
+            inet_addr_to_ip4addr(&iface_addr, &m4req->mm_interface);
+            inet_addr_to_ip4addr(&multi_addr, &m4req->mm_multiaddr);
+            rc = igmp_leavegroup(&iface_addr, &multi_addr);
+            UNLOCK_TCPIP_CORE();
+            return lwip_err_to_mn_err(rc);
+
+        case MN_MCAST4_IF:
+            m4if = val;
+            LOCK_TCPIP_CORE();
+            inet_addr_to_ip4addr(&iface_addr, &m4if->mm_inaddr);
+            udp_set_multicast_netif_addr(lwip_sock->ls_pcb.udp, &iface_addr);
+            UNLOCK_TCPIP_CORE();
+            return 0;
+
+        case MN_MCAST4_LOOP:
+            optval8 = *(uint8_t *)val;
+            LOCK_TCPIP_CORE();
+            if (optval8 == 0) {
+                udp_setflags(lwip_sock->ls_pcb.udp,
+                             udp_flags(lwip_sock->ls_pcb.udp) &
+                                 ~UDP_FLAGS_MULTICAST_LOOP);
+            } else {
+                udp_setflags(lwip_sock->ls_pcb.udp,
+                             udp_flags(lwip_sock->ls_pcb.udp) |
+                                 UDP_FLAGS_MULTICAST_LOOP);
+            }
+            UNLOCK_TCPIP_CORE();
+            return 0;
+
+        case MN_MCAST4_TTL:
+            optval8 = *(uint8_t *)val;
+            LOCK_TCPIP_CORE();
+            udp_set_multicast_ttl(lwip_sock->ls_pcb.udp, optval8);
+            UNLOCK_TCPIP_CORE();
+            return 0;
+
         default:
             break;
         }
