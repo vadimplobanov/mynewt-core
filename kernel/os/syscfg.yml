@@ -24,7 +24,7 @@ syscfg.defs:
         value: 127
     OS_MAIN_STACK_SIZE:
         description: 'Stack size of initialization and main task'
-        value: 1024
+        value: 2048
     OS_CLI:
         description: 'CLI commands to inspect OS'
         value: 0
