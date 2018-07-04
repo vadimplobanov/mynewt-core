@@ -112,6 +112,9 @@ SECTIONS
         . = ALIGN(4);
     } > RAM
 
+    __HeapBase = .;
+    __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
+
     .coredata :
     {
         __coredata_start__ = .;
@@ -153,7 +156,7 @@ SECTIONS
         /* All data end */
         __data_end__ = .;
 
-    } > RAM AT > FLASH
+    } > CCM AT > FLASH
 
     .corebss (NOLOAD):
     {
@@ -176,10 +179,7 @@ SECTIONS
         *(COMMON)
         . = ALIGN(4);
         __bss_end__ = .;
-    } > RAM
-
-    __HeapBase = .;
-    __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
+    } > CCM
 
     _ram_start = ORIGIN(RAM);
     _ccram_start = ORIGIN(CCM);
