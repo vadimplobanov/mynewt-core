@@ -134,9 +134,6 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
     return ERR_OK;
 }
 
-static os_stack_t sys_thread_new_stack_mem[TCPIP_THREAD_STACKSIZE];
-static uint8_t sys_thread_new_stack_idx;
-
 static inline sys_thread_t
 sys_thread_new(const char *name, void (*thread)(void *arg), void *arg,
   int stacksize, int prio)
@@ -146,14 +143,8 @@ sys_thread_new(const char *name, void (*thread)(void *arg), void *arg,
 
     task = (struct os_task *)os_malloc(sizeof(*task));
     assert(task);
-    if (stacksize == TCPIP_THREAD_STACKSIZE &&
-        sys_thread_new_stack_idx < 1) {
-        stack = sys_thread_new_stack_mem;
-        sys_thread_new_stack_idx++;
-    } else {
-        stack = (os_stack_t *)os_malloc(stacksize * sizeof(os_stack_t));
-        assert(stack);
-    }
+    stack = (os_stack_t *)os_malloc(stacksize * sizeof(os_stack_t));
+    assert(stack);
     if (os_task_init(task, name, thread, arg, prio, OS_WAIT_FOREVER, stack,
         stacksize)) {
         assert(0);
