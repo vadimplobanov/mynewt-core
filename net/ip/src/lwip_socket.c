@@ -89,8 +89,12 @@ static int lwip_stream_tx(struct lwip_sock *s, int notify);
 static int
 lwip_mn_addr_to_addr(struct mn_sockaddr *ms, ip_addr_t *addr, uint16_t *port)
 {
+#if LWIP_IPV4
     struct mn_sockaddr_in *msin;
+#endif
+#if LWIP_IPV6
     struct mn_sockaddr_in6 *msin6;
+#endif
 
     switch (ms->msa_family) {
 #if LWIP_IPV4
@@ -118,8 +122,12 @@ static void
 lwip_addr_to_mn_addr(struct mn_sockaddr *ms, const ip_addr_t *addr,
   uint16_t port)
 {
+#if LWIP_IPV4
     struct mn_sockaddr_in *msin;
+#endif
+#if LWIP_IPV6
     struct mn_sockaddr_in6 *msin6;
+#endif
 
     if (IP_IS_V4_VAL(*addr)) {
         ms->msa_family = MN_AF_INET;
