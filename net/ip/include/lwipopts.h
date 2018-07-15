@@ -28,7 +28,7 @@ extern "C" {
 #define LWIP_NETIF_LOOPBACK		1	/* yes loopback interface */
 
 #define TCPIP_THREAD_PRIO		5
-#define TCPIP_THREAD_STACKSIZE	((6 * 1024) / sizeof(portSTACK_TYPE))
+#define TCPIP_THREAD_STACKSIZE	((12 * 1024) / sizeof(portSTACK_TYPE))
 #define TCPIP_MBOX_SIZE			10
 
 #define MEMP_NUM_ARP_QUEUE		4
@@ -36,7 +36,7 @@ extern "C" {
 #define LWIP_SO_RCVTIMEO                1
 #define LWIP_IGMP                       1
 #define SO_REUSE                        1
-#define LWIP_DNS                        1
+#define LWIP_DNS                        0
 #define DNS_TABLE_SIZE                  3
 #define DNS_MAX_NAME_LENGTH             64
 #define LWIP_NETIF_HOSTNAME             1
@@ -48,7 +48,7 @@ extern "C" {
 #define LWIP_AUTOIP                     0
 #define LWIP_DHCP_AUTOIP_COOP           0
 
-#define LWIP_IPV6                       1
+#define LWIP_IPV6                       0
 #define MEMP_NUM_ND6_QUEUE              4
 
 #ifndef LWIP_DEBUG
@@ -101,7 +101,7 @@ extern "C" {
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
 #ifndef PBUF_POOL_SIZE
-#define PBUF_POOL_SIZE                  6
+#define PBUF_POOL_SIZE                  10
 #endif
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
