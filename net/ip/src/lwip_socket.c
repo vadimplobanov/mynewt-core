@@ -84,7 +84,9 @@ struct lwip_sock {
 
 static struct os_mempool lwip_sockets;
 
+#if LWIP_TCP
 static int lwip_stream_tx(struct lwip_sock *s, int notify);
+#endif
 
 static int
 lwip_mn_addr_to_addr(struct mn_sockaddr *ms, ip_addr_t *addr, uint16_t *port)
@@ -364,8 +366,8 @@ lwip_close(struct mn_socket *ms)
         tcp_err(s->ls_pcb.tcp, NULL);
         tcp_close(s->ls_pcb.tcp);
         break;
-    }
 #endif
+    }
     UNLOCK_TCPIP_CORE();
     while ((m = STAILQ_FIRST(&s->ls_rx))) {
         STAILQ_REMOVE_HEAD(&s->ls_rx, omp_next);
@@ -469,6 +471,7 @@ lwip_listen(struct mn_socket *ms, uint8_t qlen)
     return MN_EINVAL;
 }
 
+#if LWIP_TCP
 static int
 lwip_stream_tx(struct lwip_sock *s, int notify)
 {
@@ -502,6 +505,7 @@ lwip_stream_tx(struct lwip_sock *s, int notify)
     }
     return rc;
 }
+#endif
 
 static int
 lwip_sendto(struct mn_socket *ms, struct os_mbuf *m,
