@@ -28,7 +28,7 @@ extern "C" {
 #define LWIP_NETIF_LOOPBACK		1	/* yes loopback interface */
 
 #define TCPIP_THREAD_PRIO		5
-#define TCPIP_THREAD_STACKSIZE	((12 * 1024) / sizeof(portSTACK_TYPE))
+#define TCPIP_THREAD_STACKSIZE	((6 * 1024) / sizeof(portSTACK_TYPE))
 #define TCPIP_MBOX_SIZE			10
 
 #define MEMP_NUM_ARP_QUEUE		4
@@ -118,7 +118,7 @@ extern "C" {
 #define PBUF_LINK_HLEN                  16
 
 /* ---------- TCP options ---------- */
-#define LWIP_TCP                        1
+#define LWIP_TCP                        0
 #define TCP_TTL                         255
 
 /* Controls if TCP should queue segments that arrive out of
@@ -166,11 +166,11 @@ extern "C" {
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of
    interfaces. DHCP is not implemented in lwIP 0.5.1, however, so
    turning this on does currently not work. */
-#define LWIP_DHCP                       1
+#define LWIP_DHCP                       0
 
 /* 1 if you want to do an ARP check on the offered address
    (recommended). */
-#define DHCP_DOES_ARP_CHECK             1
+#define DHCP_DOES_ARP_CHECK             0
 
 /* ---------- UDP options ---------- */
 #define LWIP_UDP                        1
