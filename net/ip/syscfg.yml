@@ -21,6 +21,6 @@
 syscfg.defs:
     LWIP_CLI:
         description: 'CLI for interacting with LwIP'
-        value: 1
+        value: 0
         restrictions:
           - SHELL_TASK
