@@ -86,6 +86,8 @@ struct stm32_eth_stats {
     uint32_t oframe;
     uint32_t odone;
     uint32_t oerr;
+    uint32_t olco;
+    uint32_t oerrlast;
     uint32_t iframe;
     uint32_t imem;
 } stm32_eth_stats;
@@ -223,6 +225,7 @@ static void
 stm32_eth_output_done(struct stm32_eth_state *ses)
 {
     struct stm32_eth_desc *sed;
+    uint32_t reg;
 
     while (1) {
         sed = &ses->st_tx_descs[ses->st_tx_tail];
@@ -236,6 +239,27 @@ stm32_eth_output_done(struct stm32_eth_state *ses)
             break;
         }
         if (sed->desc.Status & ETH_DMATXDESC_ES) {
+            if (sed->desc.Status & ETH_DMATXDESC_LCO) {
+                reg = sed->desc.Status;
+                reg &= 0xFFFF0000;
+                sed->desc.Status = reg;
+                sed->desc.ControlBufferSize = sed->p->len;
+                sed->desc.Buffer1Addr = (uint32_t)sed->p->payload;
+                sed->desc.Status = reg | ETH_DMATXDESC_OWN;
+
+                if (ses->st_eth.Instance->DMASR & ETH_DMASR_TBUS) {
+                    /*
+                     * Resume DMA transmission.
+                     */
+                    ses->st_eth.Instance->DMASR = ETH_DMASR_TBUS;
+                    ses->st_eth.Instance->DMATPDR = 0U;
+                }
+
+                ++stm32_eth_stats.olco;
+                break;
+            }
+
+            stm32_eth_stats.oerrlast = sed->desc.Status;
             ++stm32_eth_stats.oerr;
         } else {
             ++stm32_eth_stats.odone;
