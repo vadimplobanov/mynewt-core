@@ -84,10 +84,9 @@ struct stm32_eth_state {
 
 struct stm32_eth_stats {
     uint32_t oframe;
+    uint32_t oretry;
     uint32_t odone;
     uint32_t oerr;
-    uint32_t olco;
-    uint32_t oerrlast;
     uint32_t iframe;
     uint32_t imem;
 } stm32_eth_stats;
@@ -221,70 +220,14 @@ stm32_mld_mac_filter(struct netif *nif, const ip6_addr_t *group,
 }
 #endif
 
-static void
-stm32_eth_output_done(struct stm32_eth_state *ses)
-{
-    struct stm32_eth_desc *sed;
-    uint32_t reg;
-
-    while (1) {
-        sed = &ses->st_tx_descs[ses->st_tx_tail];
-        if (!sed->p) {
-            break;
-        }
-        if (sed->desc.Status & ETH_DMATXDESC_OWN) {
-            /*
-             * Belongs to board
-             */
-            break;
-        }
-        if (sed->desc.Status & ETH_DMATXDESC_ES) {
-            if (sed->desc.Status & ETH_DMATXDESC_LCO) {
-                reg = sed->desc.Status;
-                reg &= 0xFFFF0000;
-                sed->desc.Status = reg;
-                sed->desc.ControlBufferSize = sed->p->len;
-                sed->desc.Buffer1Addr = (uint32_t)sed->p->payload;
-                sed->desc.Status = reg | ETH_DMATXDESC_OWN;
-
-                if (ses->st_eth.Instance->DMASR & ETH_DMASR_TBUS) {
-                    /*
-                     * Resume DMA transmission.
-                     */
-                    ses->st_eth.Instance->DMASR = ETH_DMASR_TBUS;
-                    ses->st_eth.Instance->DMATPDR = 0U;
-                }
-
-                ++stm32_eth_stats.olco;
-                break;
-            }
-
-            stm32_eth_stats.oerrlast = sed->desc.Status;
-            ++stm32_eth_stats.oerr;
-        } else {
-            ++stm32_eth_stats.odone;
-        }
-        pbuf_free(sed->p);
-        sed->p = NULL;
-        ses->st_tx_tail++;
-        if (ses->st_tx_tail >= STM32_ETH_TX_DESC_SZ) {
-            ses->st_tx_tail = 0;
-        }
-    }
-}
-
 static err_t
-stm32_eth_output(struct netif *nif, struct pbuf *p)
+stm32_eth_fill_tx(struct stm32_eth_state *ses, struct pbuf *p, int takeref)
 {
-    struct stm32_eth_state *ses = (struct stm32_eth_state *)nif;
     struct stm32_eth_desc *sed;
-    uint32_t reg;
     struct pbuf *q;
     err_t errval;
+    uint32_t reg;
 
-    stm32_eth_output_done(ses);
-
-    ++stm32_eth_stats.oframe;
     sed = &ses->st_tx_descs[ses->st_tx_head];
     for (q = p; q; q = q->next) {
         if (!q->len) {
@@ -317,12 +260,84 @@ stm32_eth_output(struct netif *nif, struct pbuf *p)
         sed->desc.ControlBufferSize = p->len;
         sed->desc.Buffer1Addr = (uint32_t)p->payload;
         sed->p = p;
-        pbuf_ref(p);
+        if (takeref) {
+            pbuf_ref(p);
+        }
         sed->desc.Status = reg | ETH_DMATXDESC_OWN;
         ses->st_tx_head++;
         if (ses->st_tx_head >= STM32_ETH_TX_DESC_SZ) {
             ses->st_tx_head = 0;
         }
+    }
+
+    return ERR_OK;
+error:
+    ++stm32_eth_stats.oerr;
+    return errval;
+}
+
+static err_t
+stm32_eth_output_done(struct stm32_eth_state *ses)
+{
+    struct stm32_eth_desc *sed;
+    struct pbuf *retry = NULL;
+    err_t errval;
+
+    while (1) {
+        sed = &ses->st_tx_descs[ses->st_tx_tail];
+        if (!sed->p) {
+            break;
+        }
+        if (sed->desc.Status & ETH_DMATXDESC_OWN) {
+            /*
+             * Belongs to board
+             */
+            break;
+        }
+        if (sed->desc.Status & ETH_DMATXDESC_ES) {
+            if (sed->desc.Status & ETH_DMATXDESC_LCO && !retry) {
+                retry = sed->p;
+                ++stm32_eth_stats.oretry;
+            } else {
+                pbuf_free(sed->p);
+                ++stm32_eth_stats.oerr;
+            }
+        } else {
+            pbuf_free(sed->p);
+            ++stm32_eth_stats.odone;
+        }
+        sed->p = NULL;
+        ses->st_tx_tail++;
+        if (ses->st_tx_tail >= STM32_ETH_TX_DESC_SZ) {
+            ses->st_tx_tail = 0;
+        }
+    }
+
+    if (retry) {
+        errval = stm32_eth_fill_tx(ses, retry, 0);
+    } else {
+        errval = ERR_OK;
+    }
+
+    return errval;
+}
+
+static err_t
+stm32_eth_output(struct netif *nif, struct pbuf *p)
+{
+    struct stm32_eth_state *ses = (struct stm32_eth_state *)nif;
+    err_t errval;
+
+    errval = stm32_eth_output_done(ses);
+    if (errval != ERR_OK) {
+        return errval;
+    }
+
+    ++stm32_eth_stats.oframe;
+
+    errval = stm32_eth_fill_tx(ses, p, 1);
+    if (errval != ERR_OK) {
+        return errval;
     }
 
     if (ses->st_eth.Instance->DMASR & ETH_DMASR_TBUS) {
@@ -334,9 +349,6 @@ stm32_eth_output(struct netif *nif, struct pbuf *p)
     }
 
     return ERR_OK;
-error:
-    ++stm32_eth_stats.oerr;
-    return errval;
 }
 
 static void
