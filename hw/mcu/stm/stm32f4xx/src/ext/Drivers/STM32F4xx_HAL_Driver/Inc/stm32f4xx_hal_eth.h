@@ -658,13 +658,13 @@ typedef struct
 /** @defgroup ETH_Buffers_setting ETH Buffers setting
   * @{
   */ 
-#define ETH_MAX_PACKET_SIZE       ((uint32_t)1524U)    /*!< ETH_HEADER + ETH_EXTRA + ETH_VLAN_TAG + ETH_MAX_ETH_PAYLOAD + ETH_CRC */
+#define ETH_MAX_PACKET_SIZE       ((uint32_t)1024U)    /*!< ETH_HEADER + ETH_EXTRA + ETH_VLAN_TAG + ETH_MAX_ETH_PAYLOAD + ETH_CRC */
 #define ETH_HEADER                ((uint32_t)14U)    /*!< 6 byte Dest addr, 6 byte Src addr, 2 byte length/type */
 #define ETH_CRC                   ((uint32_t)4U)    /*!< Ethernet CRC */
 #define ETH_EXTRA                 ((uint32_t)2U)    /*!< Extra bytes in some cases */   
 #define ETH_VLAN_TAG              ((uint32_t)4U)    /*!< optional 802.1q VLAN Tag */
 #define ETH_MIN_ETH_PAYLOAD       ((uint32_t)46U)    /*!< Minimum Ethernet payload size */
-#define ETH_MAX_ETH_PAYLOAD       ((uint32_t)1500U)    /*!< Maximum Ethernet payload size */
+#define ETH_MAX_ETH_PAYLOAD       ((uint32_t)1000U)    /*!< Maximum Ethernet payload size */
 #define ETH_JUMBO_FRAME_PAYLOAD   ((uint32_t)9000U)    /*!< Jumbo frame payload size */      
 
  /* Ethernet driver receive buffers are organized in a chained linked-list, when

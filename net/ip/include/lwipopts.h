@@ -101,11 +101,11 @@ extern "C" {
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
 #ifndef PBUF_POOL_SIZE
-#define PBUF_POOL_SIZE                  10
+#define PBUF_POOL_SIZE                  16
 #endif
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
-#define PBUF_POOL_BUFSIZE               1580
+#define PBUF_POOL_BUFSIZE               1024
 
 /*
  * Disable this; causes excessive stack use in device drivers calling
